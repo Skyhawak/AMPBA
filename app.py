@@ -20,9 +20,9 @@ def aggregate_weekly(preprocessed_data_weekly):
 def impute_weekly_data(weekly_data, imputation_method):
     weekly_data['QTY'] = weekly_data['QTY'].replace(0, np.nan)
     if imputation_method == 'ffill':
-        weekly_data['QTY'] = weekly_data['QTY'].fillna(method='ffill')
+        weekly_data['QTY'] = weekly_data['QTY'].ffill()
     elif imputation_method == 'bfill':
-        weekly_data['QTY'] = weekly_data['QTY'].fillna(method='bfill')
+        weekly_data['QTY'] = weekly_data['QTY'].bfill
     else:
         weekly_data['QTY'] = weekly_data['QTY'].interpolate(method=imputation_method)
     return weekly_data

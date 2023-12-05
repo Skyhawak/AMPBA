@@ -1,6 +1,6 @@
-streamlit==0.84.1
-autots==0.3.1
-matplotlib==3.4.2
-numpy==1.21.1
-pandas==1.3.0
-openpyxl==3.1.2
+streamlit
+autots
+matplotlib
+numpy
+pandas
+openpyxl
