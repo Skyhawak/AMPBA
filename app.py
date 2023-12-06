@@ -37,7 +37,7 @@ def plot_data(original_data, forecast_data, upper_confidence, lower_confidence):
     return plt
 
 # Streamlit UI
-st.title("Sales Data Forecasting")
+st.title("Wooden Pallets Demand Forecasting")
 
 st.sidebar.header("Input Options")
 
@@ -56,7 +56,7 @@ if uploaded_file is not None:
     customer_name = st.sidebar.selectbox("Select Customer", data['Customer Name (Cleaned)'].unique())
 
     # Select Aggregation Frequency
-    frequency = st.sidebar.selectbox("Select Aggregation Frequency", ['15D', 'W', 'M'])
+    frequency = st.sidebar.selectbox("Select Aggregation Frequency", ['15D', 'Week', 'Month'])
 
     # Select Imputation Method
     imputation_method = st.sidebar.selectbox("Select Imputation Method", ['ffill', 'bfill', 'linear'])
