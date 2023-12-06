@@ -2,15 +2,35 @@ import streamlit as st
 import pandas as pd
 from autots import AutoTS
 import matplotlib.pyplot as plt
+import base64
 import numpy as np
 
-# Function to load and apply the CSS file
-def local_css(file_name):
-    with open(file_name, "r") as f:
-        st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+# Function to apply custom CSS for background image
+def local_css():
+    st.markdown(
+        f"""
+        <style>
+        .stApp {{
+            background-image: url("data:image/png;base64,{bg_image}");
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }}
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
 
-# Apply the CSS
-local_css("style.css")
+# Load your image
+with open("High_resolution_image_of_wooden_pallets_neatly_sta.png", "rb") as file:
+    bg_image = base64.b64encode(file.read()).decode("utf-8")
+
+# Apply the custom CSS
+local_css()
+
+st.title("Wooden Pallets Demand Forecasting")
+
+st.sidebar.header("Input Options")
 
 # Function to preprocess data for a specific customer
 def preprocess_data_for_customer(data, customer_name, start_date, end_date, frequency):
@@ -44,44 +64,22 @@ def plot_data(original_data, forecast_data, upper_confidence, lower_confidence):
     plt.tight_layout()  # Adjust layout for better appearance
     return plt
 
-# Streamlit UI
-st.title("Wooden Pallets Demand Forecasting")
-
-st.sidebar.header("Input Options")
-
 # File upload
 uploaded_file = st.sidebar.file_uploader("Choose a file (Excel or CSV)", type=["xlsx", "csv"])
 if uploaded_file is not None:
-    # Read file
-    if uploaded_file.type == "text/csv":
-        data = pd.read_csv(uploaded_file)
-    else:
-        data = pd.read_excel(uploaded_file)
-
+    data = pd.read_csv(uploaded_file) if uploaded_file.type == "text/csv" else pd.read_excel(uploaded_file)
     data['Date'] = pd.to_datetime(data['Date'])
-
-    # Select Customer
     customer_name = st.sidebar.selectbox("Select Customer", data['Customer Name (Cleaned)'].unique())
-
-    # Select Aggregation Frequency
-    frequency = st.sidebar.selectbox("Select Aggregation Frequency", ['15D', 'Week', 'Month'])
-
-    # Select Imputation Method
+    frequency = st.sidebar.selectbox("Select Aggregation Frequency", ['15D', 'W', 'M'])
     imputation_method = st.sidebar.selectbox("Select Imputation Method", ['ffill', 'bfill', 'linear'])
-
-    # Select Confidence Interval
     confidence_interval = st.sidebar.slider("Select Confidence Interval", 0.0, 1.0, 0.9)
 
     if st.sidebar.button("Forecast"):
         with st.spinner('Running the model...'):
-            start_date = data['Date'].min()
-            end_date = data['Date'].max()
-
-            # Data Preprocessing
+            start_date, end_date = data['Date'].min(), data['Date'].max()
             preprocessed_data = preprocess_data_for_customer(data, customer_name, start_date, end_date, frequency)
             imputed_data = impute_data(preprocessed_data, imputation_method)
-
-            # Initialize and fit the AutoTS model
+            
             model = AutoTS(
                 forecast_length=int(len(imputed_data) * 0.2),
                 frequency=frequency,
@@ -93,25 +91,19 @@ if uploaded_file is not None:
             )
             model = model.fit(imputed_data, date_col='Date', value_col='QTY', id_col=None)
 
-            # Display chosen model
             st.write("Chosen Model by AutoTS:")
-            st.text(str(model.best_model))
+            st.text(str(model.best_model))  # Convert the model details to a string
 
-            # Generate predictions
             prediction = model.predict()
             forecast_df = prediction.forecast
-
-            # Combine forecast and confidence intervals into one DataFrame
             forecast_combined = forecast_df.copy()
             forecast_combined['Forecast Interval'] = forecast_combined.index
             forecast_combined['Lower Confidence Interval'] = prediction.lower_forecast['QTY']
             forecast_combined['Upper Confidence Interval'] = prediction.upper_forecast['QTY']
             forecast_combined.rename(columns={'QTY': 'Forecast Value'}, inplace=True)
-            
-            # Display forecast with intervals
+
             st.write("Forecast with Confidence Intervals:")
             st.dataframe(forecast_combined.reset_index(drop=True))
 
-            # Plotting
             fig = plot_data(imputed_data, forecast_combined, forecast_combined['Lower Confidence Interval'], forecast_combined['Upper Confidence Interval'])
             st.pyplot(fig)
