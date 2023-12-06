@@ -4,6 +4,14 @@ from autots import AutoTS
 import matplotlib.pyplot as plt
 import numpy as np
 
+# Function to load and apply the CSS file
+def local_css(file_name):
+    with open(file_name, "r") as f:
+        st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+
+# Apply the CSS
+local_css("style.css")
+
 # Function to preprocess data for a specific customer
 def preprocess_data_for_customer(data, customer_name, start_date, end_date, frequency):
     customer_data = data[data['Customer Name (Cleaned)'] == customer_name]
