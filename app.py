@@ -29,8 +29,8 @@ with open("High_resolution_image_of_wooden_pallets_neatly_sta.png", "rb") as fil
 local_css()
 
 st.markdown("""
-    <h1 style='text-align: center; color: black; margin-bottom: 0px;'>Demand Forecasting & Optimization of Supply Chain</h1>
-    <h2 style='text-align: center; color: black; margin-top: 0px;'>Wooden Pallets</h2>
+    <h1 style='text-align: right; color: black; margin-bottom: 0px;'>Demand Forecasting & Optimization of Supply Chain</h1>
+    <h2 style='text-align: right; color: black; margin-top: 0px;'>Wooden Pallets</h2>
     """, unsafe_allow_html=True)
 
 
