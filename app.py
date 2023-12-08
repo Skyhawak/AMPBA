@@ -29,7 +29,7 @@ with open("High_resolution_image_of_wooden_pallets_neatly_sta.png", "rb") as fil
 local_css()
 
 st.title("Demand Forecasting & Optimization of Supply Chain")
-st.markdown("<i>Wooden Pallets</i>", unsafe_allow_html=True)
+st.markdown('<p style="font-size: 24px;"><i>Wooden Pallets</i></p>', unsafe_allow_html=True)
 
 st.sidebar.header("Input Options")
 
