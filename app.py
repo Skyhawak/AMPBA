@@ -28,7 +28,8 @@ with open("High_resolution_image_of_wooden_pallets_neatly_sta.png", "rb") as fil
 # Apply the custom CSS
 local_css()
 
-st.title("Wooden Pallets Demand Forecasting")
+st.title("Demand Forecasting & Optimization of Supply Chain")
+st.markdown("<i>Wooden Pallets</i>", unsafe_allow_html=True)
 
 st.sidebar.header("Input Options")
 
