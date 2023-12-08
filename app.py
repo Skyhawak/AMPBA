@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
+import plotly.express as px
 from autots import AutoTS
-import matplotlib.pyplot as plt
 import base64
 import numpy as np
 
@@ -40,18 +40,13 @@ def preprocess_data_for_customer(data, customer_name, start_date, end_date, freq
     aggregated_data = customer_data.set_index('Date').resample(frequency).sum().reset_index()
     return aggregated_data
 
-# Function to plot data
-def plot_combined_data(original_data, imputed_data):
-    plt.figure(figsize=(12, 6))
-    plt.plot(original_data['Date'], original_data['QTY'], label='Data Before Imputation', color='blue')
+# Function to plot data with Plotly
+def plot_combined_data_plotly(original_data, imputed_data=None):
+    fig = px.line(original_data, x='Date', y='QTY', title='Data Over Time', labels={'QTY': 'Quantity'}, markers=True)
     if imputed_data is not None:
-        plt.plot(imputed_data['Date'], imputed_data['QTY'], label='Data After Imputation', color='red', linestyle='--')
-    plt.title('Data Over Time Before and After Imputation')
-    plt.xlabel('Date')
-    plt.ylabel('QTY')
-    plt.legend()
-    plt.tight_layout()
-    st.pyplot(plt)
+        fig.add_scatter(x=imputed_data['Date'], y=imputed_data['QTY'], mode='lines+markers', name='Imputed Data', line=dict(dash='dash'))
+    fig.update_layout(title='Data Over Time Before and After Imputation')
+    st.plotly_chart(fig, use_container_width=True)
 
 # File upload
 uploaded_file = st.sidebar.file_uploader("Choose a file (Excel or CSV)", type=["xlsx", "csv"])
@@ -78,9 +73,9 @@ if uploaded_file is not None:
 
     # Plot combined data
     st.subheader("Data Over Time Before and After Imputation")
-    plot_combined_data(preprocessed_data, imputed_data)
+    plot_combined_data_plotly(preprocessed_data, imputed_data)
 
-    # Forecasting and plotting
+    # Forecasting
     if st.sidebar.button("Forecast"):
         with st.spinner('Running the model...'):
             model = AutoTS(
@@ -109,13 +104,8 @@ if uploaded_file is not None:
             st.dataframe(forecast_combined.reset_index(drop=True))
 
             # Plotting the forecast
-            plt.figure(figsize=(12, 6))
-            plt.plot(imputed_data['Date'], imputed_data['QTY'], label='Historical Data', color='blue')
-            plt.plot(forecast_combined['Forecast Interval'], forecast_combined['Forecast Value'], label='Forecasted Data', color='green', linestyle='--')
-            plt.fill_between(forecast_combined['Forecast Interval'], forecast_combined['Lower Confidence Interval'], forecast_combined['Upper Confidence Interval'], color='gray', alpha=0.3, label='Confidence Interval')
-            plt.title('Historical vs Forecasted Data with Confidence Intervals')
-            plt.xlabel('Date')
-            plt.ylabel('QTY')
-            plt.legend()
-            plt.tight_layout()
-            st.pyplot(plt)
+            forecast_fig = px.line(forecast_combined, x='Forecast Interval', y='Forecast Value', title='Forecasted Data', markers=True)
+            forecast_fig.add_scatter(x=forecast_combined['Forecast Interval'], y=forecast_combined['Lower Confidence Interval'], fill='tonexty', mode='lines', line=dict(color="lightgrey"), name='Lower Confidence')
+            forecast_fig.add_scatter(x=forecast_combined['Forecast Interval'], y=forecast_combined['Upper Confidence Interval'], fill='tonexty', mode='lines', line=dict(color="lightgrey"), name='Upper Confidence')
+            forecast_fig.update_layout(title='Historical vs Forecasted Data with Confidence Intervals')
+            st.plotly_chart(forecast_fig, use_container_width=True)
