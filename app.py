@@ -41,14 +41,16 @@ def preprocess_data_for_customer(data, customer_name, start_date, end_date, freq
     return aggregated_data
 
 # Function to plot data
-def plot_data(data, title):
+def plot_combined_data(original_data, imputed_data):
     plt.figure(figsize=(12, 6))
-    plt.plot(data['Date'], data['QTY'], label='Data', color='blue')
-    plt.title(title)
+    plt.plot(original_data['Date'], original_data['QTY'], label='Data Before Imputation', color='blue')
+    if imputed_data is not None:
+        plt.plot(imputed_data['Date'], imputed_data['QTY'], label='Data After Imputation', color='red', linestyle='--')
+    plt.title('Data Over Time Before and After Imputation')
     plt.xlabel('Date')
     plt.ylabel('QTY')
     plt.legend()
-    plt.tight_layout()  # Adjust layout for better appearance
+    plt.tight_layout()
     st.pyplot(plt)
 
 # File upload
@@ -59,13 +61,11 @@ if uploaded_file is not None:
     customer_name = st.sidebar.selectbox("Select Customer", data['Customer Name (Cleaned)'].unique())
     frequency = st.sidebar.selectbox("Select Aggregation Frequency", ['15D', 'W', 'M'])
 
-    # Preprocess and plot data before imputation
     preprocessed_data = preprocess_data_for_customer(data, customer_name, data['Date'].min(), data['Date'].max(), frequency)
-    st.subheader("Aggregated Data Before Imputation")
-    plot_data(preprocessed_data, "Data Over Time Before Imputation")
-
-    # Imputation selection and plot
+    
+    # Imputation selection
     imputation_method = st.sidebar.selectbox("Select Imputation Method", ['None', 'ffill', 'bfill', 'linear'])
+    imputed_data = None
     if imputation_method != 'None':
         imputed_data = preprocessed_data.copy()
         imputed_data['QTY'] = imputed_data['QTY'].replace(0, np.nan)
@@ -75,8 +75,10 @@ if uploaded_file is not None:
             imputed_data['QTY'] = imputed_data['QTY'].fillna(method='bfill')
         else:
             imputed_data['QTY'] = imputed_data['QTY'].interpolate(method=imputation_method)
-        st.subheader("Aggregated Data After Imputation")
-        plot_data(imputed_data, "Data Over Time After Imputation")
+
+    # Plot combined data
+    st.subheader("Data Over Time Before and After Imputation")
+    plot_combined_data(preprocessed_data, imputed_data)
 
     # Forecasting and plotting
     if st.sidebar.button("Forecast"):
