@@ -63,8 +63,6 @@ if uploaded_file is not None:
     data['Date'] = pd.to_datetime(data['Date'])
     customer_name = st.sidebar.selectbox("Select Customer", data['Customer Name (Cleaned)'].unique())
     frequency = st.sidebar.selectbox("Select Aggregation Frequency", ['15D', 'W', 'M'])
-
-    # Confidence interval selection
     confidence_interval = st.sidebar.slider("Select Confidence Interval", 0.80, 0.99, 0.95, 0.01)
 
     preprocessed_data = preprocess_data_for_customer(data, customer_name, data['Date'].min(), data['Date'].max(), frequency)
@@ -92,7 +90,7 @@ if uploaded_file is not None:
             model = AutoTS(
                 forecast_length=int(len(imputed_data) * 0.2),
                 frequency=frequency,
-                prediction_interval=confidence_interval,  # Use selected confidence interval
+                prediction_interval=confidence_interval,
                 ensemble='simple',
                 max_generations=5,
                 num_validations=2,
@@ -101,10 +99,12 @@ if uploaded_file is not None:
             model = model.fit(imputed_data, date_col='Date', value_col='QTY', id_col=None)
 
             st.write("Chosen Model by AutoTS:")
-            # Print complete model details
-            st.text(str(model.best_model['Model']))
-            st.text("Model Summary:")
-            st.text(str(model.best_model['Model Summary']))
+            try:
+                model_summary = model.best_model['Model Summary']
+            except KeyError:
+                model_summary = "Model Summary not found in 'best_model'."
+                st.text(f"Available keys in 'best_model': {list(model.best_model.keys())}")
+            st.text(model_summary)
 
             prediction = model.predict()
             forecast_df = prediction.forecast
