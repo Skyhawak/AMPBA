@@ -6,7 +6,7 @@ import base64
 import numpy as np
 
 # Function to apply custom CSS for background image
-def local_css():
+def local_css(bg_image):
     st.markdown(
         f"""
         <style>
@@ -26,13 +26,12 @@ with open("High_resolution_image_of_wooden_pallets_neatly_sta.png", "rb") as fil
     bg_image = base64.b64encode(file.read()).decode("utf-8")
 
 # Apply the custom CSS
-local_css()
+local_css(bg_image)
 
 st.markdown("""
     <h1 style='text-align: right; color: black; margin-bottom: 0px;'>Demand Forecasting & Optimization of Supply Chain</h1>
     <h2 style='text-align: right; color: black; margin-top: 0px;'>Wooden Pallets</h2>
     """, unsafe_allow_html=True)
-
 
 st.sidebar.header("Input Options")
 
@@ -65,6 +64,9 @@ if uploaded_file is not None:
     customer_name = st.sidebar.selectbox("Select Customer", data['Customer Name (Cleaned)'].unique())
     frequency = st.sidebar.selectbox("Select Aggregation Frequency", ['15D', 'W', 'M'])
 
+    # Confidence interval selection
+    confidence_interval = st.sidebar.slider("Select Confidence Interval", 0.80, 0.99, 0.95, 0.01)
+
     preprocessed_data = preprocess_data_for_customer(data, customer_name, data['Date'].min(), data['Date'].max(), frequency)
     
     # Imputation selection
@@ -90,7 +92,7 @@ if uploaded_file is not None:
             model = AutoTS(
                 forecast_length=int(len(imputed_data) * 0.2),
                 frequency=frequency,
-                prediction_interval=0.9,  # Assuming a fixed confidence interval
+                prediction_interval=confidence_interval,  # Use selected confidence interval
                 ensemble='simple',
                 max_generations=5,
                 num_validations=2,
@@ -99,7 +101,10 @@ if uploaded_file is not None:
             model = model.fit(imputed_data, date_col='Date', value_col='QTY', id_col=None)
 
             st.write("Chosen Model by AutoTS:")
-            st.text(str(model.best_model))  # Convert the model details to a string
+            # Print complete model details
+            st.text(str(model.best_model['Model']))
+            st.text("Model Summary:")
+            st.text(str(model.best_model['Model Summary']))
 
             prediction = model.predict()
             forecast_df = prediction.forecast
