@@ -5,6 +5,15 @@ import matplotlib.pyplot as plt
 import base64
 import numpy as np
 
+# Function to transform customer names
+def transform_customer_name(customer_name):
+    customer_name = customer_name.strip()
+    customer_name = ' '.join(customer_name.split())
+    customer_name = customer_name.replace("-", "_")
+    customer_name = customer_name.replace("Pvt. Ltd.", "Private Limited")
+    customer_name = customer_name.replace(" _ ", "_").replace("_ ", "_").replace(" _", "_")
+    return customer_name
+
 # Function to apply custom CSS for background image
 def local_css(bg_image):
     st.markdown(
@@ -29,8 +38,8 @@ with open("High_resolution_image_of_wooden_pallets_neatly_sta.png", "rb") as fil
 local_css(bg_image)
 
 st.markdown("""
-    <h1 style='text-align: right; color: black; margin-bottom: 0px;'>Demand Forecasting & Optimization of Supply Chain</h1>
-    <h2 style='text-align: right; color: black; margin-top: 0px;'>Wooden Pallets</h2>
+    <h1 style='text-align: center; color: black; margin-bottom: 0px;'>Demand Forecasting & Optimization of Supply Chain</h1>
+    <h2 style='text-align: center; color: black; margin-top: 0px;'>Wooden Pallets</h2>
     """, unsafe_allow_html=True)
 
 st.sidebar.header("Input Options")
@@ -61,6 +70,9 @@ uploaded_file = st.sidebar.file_uploader("Choose a file (Excel or CSV)", type=["
 if uploaded_file is not None:
     data = pd.read_csv(uploaded_file) if uploaded_file.type == "text/csv" else pd.read_excel(uploaded_file)
     data['Date'] = pd.to_datetime(data['Date'])
+    # Clean customer names
+    data['Customer Name (Cleaned)'] = data['Customer Name'].apply(transform_customer_name)
+
     customer_name = st.sidebar.selectbox("Select Customer", data['Customer Name (Cleaned)'].unique())
     frequency = st.sidebar.selectbox("Select Aggregation Frequency", ['15D', 'W', 'M'])
     confidence_interval = st.sidebar.slider("Select Confidence Interval", 0.80, 0.99, 0.95, 0.01)
@@ -68,13 +80,16 @@ if uploaded_file is not None:
     preprocessed_data = preprocess_data_for_customer(data, customer_name, data['Date'].min(), data['Date'].max(), frequency)
     
     # Imputation selection
-    imputation_methods = ['None', 'ffill', 'bfill', 'linear', 'akima', 'cubic']
-    imputation_method = st.sidebar.selectbox("Select Imputation Method", imputation_methods)
+    imputation_method = st.sidebar.selectbox("Select Imputation Method", ['None', 'ffill', 'bfill', 'linear'])
     imputed_data = None
     if imputation_method != 'None':
         imputed_data = preprocessed_data.copy()
         imputed_data['QTY'] = imputed_data['QTY'].replace(0, np.nan)
-        if imputation_method in imputation_methods[1:]:  # Check if the method is in the list
+        if imputation_method == 'ffill':
+            imputed_data['QTY'] = imputed_data['QTY'].fillna(method='ffill')
+        elif imputation_method == 'bfill':
+            imputed_data['QTY'] = imputed_data['QTY'].fillna(method='bfill')
+        else:
             imputed_data['QTY'] = imputed_data['QTY'].interpolate(method=imputation_method)
 
     # Plot combined data
