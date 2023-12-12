@@ -68,16 +68,13 @@ if uploaded_file is not None:
     preprocessed_data = preprocess_data_for_customer(data, customer_name, data['Date'].min(), data['Date'].max(), frequency)
     
     # Imputation selection
-    imputation_method = st.sidebar.selectbox("Select Imputation Method", ['None', 'ffill', 'bfill', 'linear'])
+    imputation_methods = ['None', 'ffill', 'bfill', 'linear', 'akima', 'cubic']
+    imputation_method = st.sidebar.selectbox("Select Imputation Method", imputation_methods)
     imputed_data = None
     if imputation_method != 'None':
         imputed_data = preprocessed_data.copy()
         imputed_data['QTY'] = imputed_data['QTY'].replace(0, np.nan)
-        if imputation_method == 'ffill':
-            imputed_data['QTY'] = imputed_data['QTY'].fillna(method='ffill')
-        elif imputation_method == 'bfill':
-            imputed_data['QTY'] = imputed_data['QTY'].fillna(method='bfill')
-        else:
+        if imputation_method in imputation_methods[1:]:  # Check if the method is in the list
             imputed_data['QTY'] = imputed_data['QTY'].interpolate(method=imputation_method)
 
     # Plot combined data
@@ -100,11 +97,12 @@ if uploaded_file is not None:
 
             st.write("Chosen Model by AutoTS:")
             try:
-                model_summary = model.best_model['Model Summary']
-            except KeyError:
-                model_summary = "Model Summary not found in 'best_model'."
+                # Retrieve and display the best model's summary
+                best_model_summary = model.best_model['Model Summary']
+                st.text(best_model_summary)
+            except KeyError as e:
+                st.error(f"KeyError: {e}")
                 st.text(f"Available keys in 'best_model': {list(model.best_model.keys())}")
-            st.text(model_summary)
 
             prediction = model.predict()
             forecast_df = prediction.forecast
