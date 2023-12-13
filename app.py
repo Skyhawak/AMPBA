@@ -65,19 +65,29 @@ def plot_combined_data(original_data, imputed_data):
     plt.tight_layout()
     st.pyplot(plt)
 
-# File upload
+# File upload and date selection
 uploaded_file = st.sidebar.file_uploader("Choose a file (Excel or CSV)", type=["xlsx", "csv"])
 if uploaded_file is not None:
     data = pd.read_csv(uploaded_file) if uploaded_file.type == "text/csv" else pd.read_excel(uploaded_file)
     data['Date'] = pd.to_datetime(data['Date'])
     data['Customer Name (Cleaned)'] = data['Customer Name'].apply(transform_customer_name)
 
-    customer_name = st.sidebar.selectbox("Select Customer", data['Customer Name (Cleaned)'].unique())
+    # Get unique dates and sort them
+    unique_dates = pd.Series(data['Date'].unique()).dropna().sort_values()
+
+    # Create a dropdown for date selection
+    selected_date = st.sidebar.selectbox("Select From Date", unique_dates)
+
+    # Filter data from the selected start date
+    filtered_data = data[data['Date'] >= selected_date]
+
+    customer_name = st.sidebar.selectbox("Select Customer", filtered_data['Customer Name (Cleaned)'].unique())
     frequency = st.sidebar.selectbox("Select Aggregation Frequency", ['15D', 'W', 'M'])
     confidence_interval = st.sidebar.slider("Select Confidence Interval", 0.80, 0.99, 0.95, 0.01)
 
-    preprocessed_data = preprocess_data_for_customer(data, customer_name, data['Date'].min(), data['Date'].max(), frequency)
+    preprocessed_data = preprocess_data_for_customer(filtered_data, customer_name, selected_date, filtered_data['Date'].max(), frequency)
     
+
     # Imputation selection
     imputation_methods = ['None', 'ffill', 'bfill', 'linear', 'akima', 'cubic']
     imputation_method = st.sidebar.selectbox("Select Imputation Method", imputation_methods)
@@ -85,8 +95,9 @@ if uploaded_file is not None:
     if imputation_method != 'None':
         imputed_data = preprocessed_data.copy()
         imputed_data['QTY'] = imputed_data['QTY'].replace(0, np.nan)
-        if imputation_method in imputation_methods[1:]:
+        if imputation_method in imputation_methods[1:]:  # Check if the method is in the list
             imputed_data['QTY'] = imputed_data['QTY'].interpolate(method=imputation_method)
+
 
     # Plot combined data
     st.subheader("Data Over Time Before and After Imputation")
@@ -108,6 +119,7 @@ if uploaded_file is not None:
 
             st.write("Chosen Model by AutoTS:")
             try:
+                # Retrieve and display the best model's summary
                 best_model_summary = model.best_model['Model Summary']
                 st.text(best_model_summary)
             except KeyError as e:
