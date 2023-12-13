@@ -45,12 +45,17 @@ st.markdown("""
 st.sidebar.header("Input Options")
 
 # Function to preprocess data for a specific customer
-def preprocess_data_for_customer(data, customer_name, start_date, end_date, frequency):
+def preprocess_data_for_customer(data, customer_name, frequency):
     customer_data = data[data['Customer Name (Cleaned)'] == customer_name]
-    customer_data = customer_data[(customer_data['Date'] >= start_date) & (customer_data['Date'] <= end_date)]
-    customer_data = customer_data.groupby('Date').agg({'QTY': 'sum'}).reset_index()
-    aggregated_data = customer_data.set_index('Date').resample(frequency).sum().reset_index()
-    return aggregated_data
+    # Define the standard dates
+    standard_dates = ['2019-01-01', '2021-01-01', '2021-11-01']
+    # Preprocessing steps for each standard date
+    processed_data = pd.DataFrame()
+    for sd in standard_dates:
+        date_filtered_data = customer_data[customer_data['Date'] >= pd.to_datetime(sd)]
+        aggregated_data = date_filtered_data.set_index('Date').resample(frequency).sum().reset_index()
+        processed_data = pd.concat([processed_data, aggregated_data])
+    return processed_data
 
 # Function to plot data
 def plot_combined_data(original_data, imputed_data):
