@@ -5,15 +5,6 @@ import matplotlib.pyplot as plt
 import base64
 import numpy as np
 
-# Function to transform customer names
-def transform_customer_name(customer_name):
-    customer_name = customer_name.strip()
-    customer_name = ' '.join(customer_name.split())
-    customer_name = customer_name.replace("-", "_")
-    customer_name = customer_name.replace("Pvt. Ltd.", "Private Limited")
-    customer_name = customer_name.replace(" _ ", "_").replace("_ ", "_").replace(" _", "_")
-    return customer_name
-
 # Function to apply custom CSS for background image
 def local_css(bg_image):
     st.markdown(
@@ -53,7 +44,9 @@ def preprocess_data_for_customer(data, customer_name, frequency):
     processed_data = pd.DataFrame()
     for sd in standard_dates:
         date_filtered_data = customer_data[customer_data['Date'] >= sd]
-        aggregated_data = date_filtered_data.set_index('Date').resample(frequency).sum().reset_index()
+        # Ensure only relevant columns are aggregated
+        cols_to_aggregate = date_filtered_data[['Date', 'QTY']]  # Adjust to include relevant columns
+        aggregated_data = cols_to_aggregate.resample(frequency, on='Date').sum().reset_index()
         processed_data = pd.concat([processed_data, aggregated_data])
     return processed_data
 
@@ -73,9 +66,8 @@ def plot_combined_data(original_data, imputed_data):
 # File upload
 uploaded_file = st.sidebar.file_uploader("Choose a file (Excel or CSV)", type=["xlsx", "csv"])
 if uploaded_file is not None:
-    data = pd.read_csv(uploaded_file) if uploaded_file.type == "text/csv" else pd.read_excel(uploaded_file)
+    data = pd.read_excel(uploaded_file)
     data['Date'] = pd.to_datetime(data['Date'])
-    data['Customer Name (Cleaned)'] = data['Customer Name'].apply(transform_customer_name)
 
     customer_name = st.sidebar.selectbox("Select Customer", data['Customer Name (Cleaned)'].unique())
     frequency = st.sidebar.selectbox("Select Aggregation Frequency", ['15D', 'W', 'M'])
@@ -83,7 +75,6 @@ if uploaded_file is not None:
 
     preprocessed_data = preprocess_data_for_customer(data, customer_name, frequency)
     
-
     # Imputation selection
     imputation_methods = ['None', 'ffill', 'bfill', 'linear', 'akima', 'cubic']
     imputation_method = st.sidebar.selectbox("Select Imputation Method", imputation_methods)
@@ -93,7 +84,6 @@ if uploaded_file is not None:
         imputed_data['QTY'] = imputed_data['QTY'].replace(0, np.nan)
         if imputation_method in imputation_methods[1:]:  # Check if the method is in the list
             imputed_data['QTY'] = imputed_data['QTY'].interpolate(method=imputation_method)
-
 
     # Plot combined data
     st.subheader("Data Over Time Before and After Imputation")
