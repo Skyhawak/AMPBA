@@ -48,11 +48,11 @@ st.sidebar.header("Input Options")
 def preprocess_data_for_customer(data, customer_name, frequency):
     customer_data = data[data['Customer Name (Cleaned)'] == customer_name]
     # Define the standard dates
-    standard_dates = ['2019-01-01', '2021-01-01', '2021-11-01']
+    standard_dates = [pd.to_datetime('2019-01-01'), pd.to_datetime('2021-01-01'), pd.to_datetime('2021-11-01')]
     # Preprocessing steps for each standard date
     processed_data = pd.DataFrame()
     for sd in standard_dates:
-        date_filtered_data = customer_data[customer_data['Date'] >= pd.to_datetime(sd)]
+        date_filtered_data = customer_data[customer_data['Date'] >= sd]
         aggregated_data = date_filtered_data.set_index('Date').resample(frequency).sum().reset_index()
         processed_data = pd.concat([processed_data, aggregated_data])
     return processed_data
@@ -70,27 +70,18 @@ def plot_combined_data(original_data, imputed_data):
     plt.tight_layout()
     st.pyplot(plt)
 
-# File upload and date selection
+# File upload
 uploaded_file = st.sidebar.file_uploader("Choose a file (Excel or CSV)", type=["xlsx", "csv"])
 if uploaded_file is not None:
     data = pd.read_csv(uploaded_file) if uploaded_file.type == "text/csv" else pd.read_excel(uploaded_file)
     data['Date'] = pd.to_datetime(data['Date'])
     data['Customer Name (Cleaned)'] = data['Customer Name'].apply(transform_customer_name)
 
-    # Get unique dates and sort them
-    unique_dates = pd.Series(data['Date'].unique()).dropna().sort_values()
-
-    # Create a dropdown for date selection
-    selected_date = st.sidebar.selectbox("Select From Date", unique_dates)
-
-    # Filter data from the selected start date
-    filtered_data = data[data['Date'] >= selected_date]
-
-    customer_name = st.sidebar.selectbox("Select Customer", filtered_data['Customer Name (Cleaned)'].unique())
+    customer_name = st.sidebar.selectbox("Select Customer", data['Customer Name (Cleaned)'].unique())
     frequency = st.sidebar.selectbox("Select Aggregation Frequency", ['15D', 'W', 'M'])
     confidence_interval = st.sidebar.slider("Select Confidence Interval", 0.80, 0.99, 0.95, 0.01)
 
-    preprocessed_data = preprocess_data_for_customer(filtered_data, customer_name, selected_date, filtered_data['Date'].max(), frequency)
+    preprocessed_data = preprocess_data_for_customer(data, customer_name, frequency)
     
 
     # Imputation selection
