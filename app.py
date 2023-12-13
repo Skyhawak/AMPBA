@@ -7,28 +7,11 @@ import numpy as np
 
 # Function to transform customer names
 def transform_customer_name(customer_name):
-    customer_name = customer_name.strip()
-    customer_name = ' '.join(customer_name.split())
-    customer_name = customer_name.replace("-", "_")
-    customer_name = customer_name.replace("Pvt. Ltd.", "Private Limited")
-    customer_name = customer_name.replace(" _ ", "_").replace("_ ", "_").replace(" _", "_")
-    return customer_name
+    # Your existing transformation code
 
 # Function to apply custom CSS for background image
 def local_css(bg_image):
-    st.markdown(
-        f"""
-        <style>
-        .stApp {{
-            background-image: url("data:image/png;base64,{bg_image}");
-            background-size: cover;
-            background-repeat: no-repeat;
-            background-attachment: fixed;
-        }}
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
+    # Your existing CSS application code
 
 # Load your image
 with open("High_resolution_image_of_wooden_pallets_neatly_sta.png", "rb") as file:
@@ -57,14 +40,11 @@ if uploaded_file is not None:
     # Dropdown for standard date selection
     selected_date = st.sidebar.selectbox("Select From Date", standard_dates)
 
-    # Filter data based on the selected date
-    filtered_data = data[data['Date'] >= pd.to_datetime(selected_date)]
-
     # Dropdown for customer selection
-    customer_name = st.sidebar.selectbox("Select Customer", filtered_data['Customer Name (Cleaned)'].unique())
+    customer_name = st.sidebar.selectbox("Select Customer", data['Customer Name (Cleaned)'].unique())
 
     # Dropdown for aggregation frequency
-    frequency = st.sidebar.selectbox("Select Aggregation Frequency", ['15D', 'W', 'M'])
+    frequency = st.sidebar.selectbox("Select Aggregation Frequency", ['D', 'W', 'M'])
 
     # Slider for confidence interval
     confidence_interval = st.sidebar.slider("Select Confidence Interval", 0.80, 0.99, 0.95, 0.01)
@@ -73,18 +53,27 @@ if uploaded_file is not None:
     imputation_methods = ['None', 'ffill', 'bfill', 'linear', 'akima', 'cubic']
     imputation_method = st.sidebar.selectbox("Select Imputation Method", imputation_methods)
 
-    # Preprocess the data for the selected customer and date
+    # Filter data based on the selected date
+    filtered_data = data[data['Date'] >= pd.to_datetime(selected_date)]
+
+    # Filter data based on the selected customer
     customer_filtered_data = filtered_data[filtered_data['Customer Name (Cleaned)'] == customer_name]
+
+    # Resample and aggregate QTY data
     resampled_data = customer_filtered_data.resample(frequency, on='Date')['QTY'].sum().reset_index()
+
+    # Save the original data before imputation
+    original_data = resampled_data.copy()
 
     # Apply imputation if needed
     if imputation_method != 'None':
         resampled_data['QTY'] = resampled_data['QTY'].replace(0, np.nan).interpolate(method=imputation_method)
 
-    # Plot the data
+    # Plot the data before and after imputation
     fig, ax = plt.subplots(figsize=(12, 6))
+    ax.plot(original_data['Date'], original_data['QTY'], label='Original Data', color='blue')
     ax.plot(resampled_data['Date'], resampled_data['QTY'], label='Imputed Data', color='red', linestyle='--')
-    ax.set_title('Data Over Time with Imputation')
+    ax.set_title('Data Over Time Before and After Imputation')
     ax.set_xlabel('Date')
     ax.set_ylabel('QTY')
     ax.legend()
@@ -126,7 +115,7 @@ if uploaded_file is not None:
 
             # Plotting the forecast
             plt.figure(figsize=(12, 6))
-            plt.plot(resampled_data['Date'], resampled_data['QTY'], label='Historical Data', color='blue')
+            plt.plot(original_data['Date'], original_data['QTY'], label='Historical Data', color='blue')
             plt.plot(forecast_combined['Forecast Interval'], forecast_combined['Forecast Value'], label='Forecasted Data', color='green', linestyle='--')
             plt.fill_between(forecast_combined['Forecast Interval'], forecast_combined['Lower Confidence Interval'], forecast_combined['Upper Confidence Interval'], color='gray', alpha=0.3, label='Confidence Interval')
             plt.title('Historical vs Forecasted Data with Confidence Intervals')
