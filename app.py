@@ -35,17 +35,17 @@ st.markdown("""
 
 st.sidebar.header("Input Options")
 
+# Standard dates for data processing
+standard_dates = [pd.to_datetime('2019-01-01'), pd.to_datetime('2021-01-01'), pd.to_datetime('2021-11-01')]
+
 # Function to preprocess data for a specific customer
 def preprocess_data_for_customer(data, customer_name, frequency):
     customer_data = data[data['Customer Name (Cleaned)'] == customer_name]
-    # Define the standard dates
-    standard_dates = [pd.to_datetime('2019-01-01'), pd.to_datetime('2021-01-01'), pd.to_datetime('2021-11-01')]
-    # Preprocessing steps for each standard date
     processed_data = pd.DataFrame()
     for sd in standard_dates:
         date_filtered_data = customer_data[customer_data['Date'] >= sd]
         # Ensure only relevant columns are aggregated
-        cols_to_aggregate = date_filtered_data[['Date', 'QTY']]  # Adjust to include relevant columns
+        cols_to_aggregate = date_filtered_data[['Date', 'QTY']]
         aggregated_data = cols_to_aggregate.resample(frequency, on='Date').sum().reset_index()
         processed_data = pd.concat([processed_data, aggregated_data])
     return processed_data
@@ -130,7 +130,7 @@ if uploaded_file is not None:
             plt.fill_between(forecast_combined['Forecast Interval'], forecast_combined['Lower Confidence Interval'], forecast_combined['Upper Confidence Interval'], color='gray', alpha=0.3, label='Confidence Interval')
             plt.title('Historical vs Forecasted Data with Confidence Intervals')
             plt.xlabel('Date')
-            plt.ylabel('QTY')
-            plt.legend()
-            plt.tight_layout()
-            st.pyplot(plt)
+    plt.ylabel('QTY')
+    plt.legend()
+    plt.tight_layout()
+    st.pyplot(plt)
