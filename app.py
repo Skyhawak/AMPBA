@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+from autots import AutoTS
 import matplotlib.pyplot as plt
 import base64
 import numpy as np
@@ -8,11 +9,13 @@ import numpy as np
 def transform_customer_name(customer_name):
     customer_name = customer_name.strip()
     customer_name = ' '.join(customer_name.split())
+    customer_name = customer_name.replace("-", "_")
+    customer_name = customer_name.replace("Pvt. Ltd.", "Private Limited")
+    customer_name = customer_name.replace(" _ ", "_").replace("_ ", "_").replace(" _", "_")
     return customer_name
 
 # Function to apply custom CSS for background image
 def local_css(bg_image):
-    bg_image = base64.b64encode(bg_image.read()).decode("utf-8")
     st.markdown(
         f"""
         <style>
@@ -27,20 +30,22 @@ def local_css(bg_image):
         unsafe_allow_html=True
     )
 
-# Apply the custom CSS
+# Load your image
 with open("High_resolution_image_of_wooden_pallets_neatly_sta.png", "rb") as file:
-    local_css(file)
+    bg_image = base64.b64encode(file.read()).decode("utf-8")
+
+# Apply the custom CSS
+local_css(bg_image)
 
 st.markdown("""
-    <h1 style='text-align: center; color: black; margin-bottom: 0px;'>Demand Forecasting & Optimization of Supply Chain</h1>
-    <h2 style='text-align: center; color: black; margin-top: 0px;'>Wooden Pallets</h2>
+    <h1 style='text-align: center; color: black;'>Demand Forecasting & Optimization of Supply Chain</h1>
+    <h2 style='text-align: center; color: black;'>Wooden Pallets</h2>
     """, unsafe_allow_html=True)
 
 st.sidebar.header("Input Options")
 
-# Standard dates for data processing
+# Standard dates for selection
 standard_dates = ['2019-01-01', '2021-01-01', '2021-11-01']
-date_selection = st.sidebar.selectbox("Select From Date", standard_dates)
 
 # File upload and data preparation
 uploaded_file = st.sidebar.file_uploader("Choose a file (Excel or CSV)", type=["xlsx", "csv"])
@@ -49,30 +54,84 @@ if uploaded_file is not None:
     data['Date'] = pd.to_datetime(data['Date'])
     data['Customer Name (Cleaned)'] = data['Customer Name'].apply(transform_customer_name)
 
-    # Select customer, frequency, confidence interval, and imputation method
-    customer_name = st.sidebar.selectbox("Select Customer", data['Customer Name (Cleaned)'].unique())
+    # Dropdown for standard date selection
+    selected_date = st.sidebar.selectbox("Select From Date", standard_dates)
+
+    # Filter data based on the selected date
+    filtered_data = data[data['Date'] >= pd.to_datetime(selected_date)]
+
+    # Dropdown for customer selection
+    customer_name = st.sidebar.selectbox("Select Customer", filtered_data['Customer Name (Cleaned)'].unique())
+
+    # Dropdown for aggregation frequency
     frequency = st.sidebar.selectbox("Select Aggregation Frequency", ['15D', 'W', 'M'])
+
+    # Slider for confidence interval
     confidence_interval = st.sidebar.slider("Select Confidence Interval", 0.80, 0.99, 0.95, 0.01)
+
+    # Dropdown for imputation method
     imputation_methods = ['None', 'ffill', 'bfill', 'linear', 'akima', 'cubic']
     imputation_method = st.sidebar.selectbox("Select Imputation Method", imputation_methods)
 
-    # Filter data based on selected customer and date
-    customer_data = data[data['Customer Name (Cleaned)'] == customer_name]
-    customer_data = customer_data[customer_data['Date'] >= pd.to_datetime(date_selection)]
+    # Preprocess the data for the selected customer and date
+    customer_filtered_data = filtered_data[filtered_data['Customer Name (Cleaned)'] == customer_name]
+    resampled_data = customer_filtered_data.resample(frequency, on='Date')['QTY'].sum().reset_index()
 
-    # Resample and aggregate QTY data
-    resampled_data = customer_data.resample(frequency, on='Date')['QTY'].sum().reset_index()
-    
-    # Impute if necessary
+    # Apply imputation if needed
     if imputation_method != 'None':
-        resampled_data['QTY'] = resampled_data['QTY'].replace(0, np.nan)
-        resampled_data['QTY'] = resampled_data['QTY'].interpolate(method=imputation_method)
+        resampled_data['QTY'] = resampled_data['QTY'].replace(0, np.nan).interpolate(method=imputation_method)
 
-    # Plotting the data
-    fig, ax = plt.subplots()
-    ax.plot(resampled_data['Date'], resampled_data['QTY'], label='Data After Imputation', color='red', linestyle='--')
-    ax.set_title('Data Over Time')
+    # Plot the data
+    fig, ax = plt.subplots(figsize=(12, 6))
+    ax.plot(resampled_data['Date'], resampled_data['QTY'], label='Imputed Data', color='red', linestyle='--')
+    ax.set_title('Data Over Time with Imputation')
     ax.set_xlabel('Date')
     ax.set_ylabel('QTY')
     ax.legend()
     st.pyplot(fig)
+
+    # Forecasting
+    if st.sidebar.button("Forecast"):
+        with st.spinner('Running the model...'):
+            model = AutoTS(
+                forecast_length=int(len(resampled_data) * 0.2),
+                frequency=frequency,
+                prediction_interval=confidence_interval,
+                ensemble='simple',
+                max_generations=5,
+                num_validations=2,
+                validation_method="backwards",
+            )
+            model = model.fit(resampled_data, date_col='Date', value_col='QTY', id_col=None)
+
+            st.write("Chosen Model by AutoTS:")
+            try:
+                # Retrieve and display the best model's summary
+                best_model_summary = model.best_model['Model Summary']
+                st.text(best_model_summary)
+            except KeyError as e:
+                st.error(f"KeyError: {e}")
+                st.text(f"Available keys in 'best_model': {list(model.best_model.keys())}")
+
+            prediction = model.predict()
+            forecast_df = prediction.forecast
+            forecast_combined = forecast_df.copy()
+            forecast_combined['Forecast Interval'] = forecast_combined.index
+            forecast_combined['Lower Confidence Interval'] = prediction.lower_forecast['QTY']
+            forecast_combined['Upper Confidence Interval'] = prediction.upper_forecast['QTY']
+            forecast_combined.rename(columns={'QTY': 'Forecast Value'}, inplace=True)
+
+            st.write("Forecast with Confidence Intervals:")
+            st.dataframe(forecast_combined.reset_index(drop=True))
+
+            # Plotting the forecast
+            plt.figure(figsize=(12, 6))
+            plt.plot(resampled_data['Date'], resampled_data['QTY'], label='Historical Data', color='blue')
+            plt.plot(forecast_combined['Forecast Interval'], forecast_combined['Forecast Value'], label='Forecasted Data', color='green', linestyle='--')
+            plt.fill_between(forecast_combined['Forecast Interval'], forecast_combined['Lower Confidence Interval'], forecast_combined['Upper Confidence Interval'], color='gray', alpha=0.3, label='Confidence Interval')
+            plt.title('Historical vs Forecasted Data with Confidence Intervals')
+            plt.xlabel('Date')
+            plt.ylabel('QTY')
+            plt.legend()
+            plt.tight_layout()
+            st.pyplot(plt)
