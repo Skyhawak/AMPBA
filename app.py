@@ -32,7 +32,7 @@ def local_css(file_path):
     )
 
 # Apply the custom CSS
-local_css("path_to_your_image.png")  # Make sure to replace with the actual path to your image
+local_css("High_resolution_image_of_wooden_pallets_neatly_sta.png")  # Make sure to replace with the actual path to your image
 
 st.markdown("""
     <h1 style='text-align: center; color: black;'>Demand Forecasting & Optimization of Supply Chain</h1>
