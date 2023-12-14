@@ -121,17 +121,13 @@ if uploaded_file is not None:
 
                     st.write("Chosen Model by AutoTS:")
                     try:
-                        if 'Model Summary' in model.best_model:
-                            best_model_summary = model.best_model['Model Summary']
-                            st.text(best_model_summary)
-                        else:
-                            st.warning("No 'Model Summary' found for the best model.")
+                        best_model_summary = model.best_model['Model Summary'] if 'Model Summary' in model.best_model else "No 'Model Summary' found"
+                        st.text(best_model_summary)
                     except KeyError as e:
                         st.error(f"KeyError: {e}")
-                        st.text(f"Available keys in 'best_model': {list(model.best_model.keys())}")
 
                     prediction = model.predict()
-                    forecast_df = prediction.forecast
+                    forecast_df = prediction.forecast.round(0)
                     forecast_combined = forecast_df.copy()
                     forecast_combined['Forecast Interval'] = forecast_combined.index
                     forecast_combined['Lower Confidence Interval'] = prediction.lower_forecast['QTY']
