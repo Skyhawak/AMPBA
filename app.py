@@ -53,6 +53,15 @@ if uploaded_file is not None:
     df = pd.read_csv(uploaded_file) if uploaded_file.name.endswith('.csv') else pd.read_excel(uploaded_file)
     df['Customer Name (Cleaned)'] = df['Customer Name'].apply(transform_customer_name)
 
+# Convert Date column to datetime
+    df['Date'] = pd.to_datetime(df['Date'])
+
+    # Dropdown for standard date selection
+    selected_date = st.sidebar.selectbox("Select From Date", standard_dates)
+
+    # Filter the DataFrame from the selected date onwards
+    filtered_data = df[df['Date'] >= pd.to_datetime(selected_date)]
+
     # Specific customer names to include
     customer_names_to_include = ['Alpla India Private Limited_Sangareddy', 'Babri Polypet Private Limited_Haridwar', 'Bericap India Private Limited_Pune',
                              'Chemco Plastic Industries Private Limited_Vadodara','Epitome Petropack Limited_Kolkata','Hindustan Coca Cola Beverages Private Limited_Goblej Plant_HMA1',
@@ -62,9 +71,6 @@ if uploaded_file is not None:
 
     # Filter the data
     filtered_data = df[(df['Customer Name (Cleaned)'].isin(customer_names_to_include)) & (df['Model 2'] == 'Allot')]
-
-    # Dropdown for standard date selection
-    selected_date = st.sidebar.selectbox("Select From Date", standard_dates)
 
     # Dropdown for customer selection
     customer_name = st.sidebar.selectbox("Select Customer", filtered_data['Customer Name (Cleaned)'].unique())
