@@ -1,24 +1,34 @@
 import streamlit as st
 import pandas as pd
-from autots import AutoTS
 import matplotlib.pyplot as plt
 import base64
 import numpy as np
+from autots import AutoTS
 
 # Function to transform customer names
 def transform_customer_name(customer_name):
-    # Your existing transformation code
+    # ... (your existing transformation code)
 
 # Function to apply custom CSS for background image
-def local_css(bg_image):
-    # Your existing CSS application code
-
-# Load your image
-with open("High_resolution_image_of_wooden_pallets_neatly_sta.png", "rb") as file:
-    bg_image = base64.b64encode(file.read()).decode("utf-8")
+def local_css(file_path):
+    with open(file_path, "rb") as file:
+        bg_image = base64.b64encode(file.read()).decode("utf-8")
+    st.markdown(
+        f"""
+        <style>
+        .stApp {{
+            background-image: url("data:image/png;base64,{bg_image}");
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }}
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
 
 # Apply the custom CSS
-local_css(bg_image)
+local_css("path_to_your_image.png")  # Replace with your actual image path
 
 st.markdown("""
     <h1 style='text-align: center; color: black;'>Demand Forecasting & Optimization of Supply Chain</h1>
@@ -67,7 +77,8 @@ if uploaded_file is not None:
 
     # Apply imputation if needed
     if imputation_method != 'None':
-        resampled_data['QTY'] = resampled_data['QTY'].replace(0, np.nan).interpolate(method=imputation_method)
+        resampled_data['QTY'].replace(0, np.nan, inplace=True)
+        resampled_data['QTY'] = resampled_data['QTY'].interpolate(method=imputation_method)
 
     # Plot the data before and after imputation
     fig, ax = plt.subplots(figsize=(12, 6))
