@@ -109,7 +109,7 @@ if uploaded_file is not None:
             if st.sidebar.button("Forecast"):
                 with st.spinner('Running the model...'):
                     model = AutoTS(
-                        forecast_length=int(len(resampled_data) * 0.2),
+                        forecast_length=20,  # Forecasting 20 future values
                         frequency=frequency,
                         prediction_interval=confidence_interval,
                         ensemble='simple',
@@ -121,8 +121,11 @@ if uploaded_file is not None:
 
                     st.write("Chosen Model by AutoTS:")
                     try:
-                        best_model_summary = model.best_model['Model Summary']
-                        st.text(best_model_summary)
+                        if 'Model Summary' in model.best_model:
+                            best_model_summary = model.best_model['Model Summary']
+                            st.text(best_model_summary)
+                        else:
+                            st.warning("No 'Model Summary' found for the best model.")
                     except KeyError as e:
                         st.error(f"KeyError: {e}")
                         st.text(f"Available keys in 'best_model': {list(model.best_model.keys())}")
@@ -137,7 +140,7 @@ if uploaded_file is not None:
 
                     st.write("Forecast with Confidence Intervals:")
                     st.dataframe(forecast_combined.reset_index(drop=True))
-
+            
                     # Plotting the forecast
                     forecast_fig, forecast_ax = plt.subplots(figsize=(12, 6))
                     forecast_ax.plot(resampled_data['Date'], resampled_data['QTY'], label='Historical Data', color='blue')
