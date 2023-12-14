@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -12,7 +11,9 @@ def transform_customer_name(customer_name):
     customer_name = ' '.join(customer_name.split())
     customer_name = customer_name.replace("-", "_")
     customer_name = customer_name.replace("Pvt. Ltd.", "Private Limited")
-    customer_name = customer_name.replace(" _ ", "_").replace("_ ", "_").replace(" _", "_")
+    customer_name = customer_name.replace("Pvt Ltd", "Private Limited")
+    customer_name = customer_name.replace("Pvt. Limited", "Private Limited")
+    customer_name = customer_name.replace(" _", "_").replace("_ ", "_")
     return customer_name
 
 # Function to apply custom CSS for background image
@@ -49,15 +50,24 @@ standard_dates = ['2019-01-01', '2021-01-01', '2021-11-01']
 # File upload and data preparation
 uploaded_file = st.sidebar.file_uploader("Choose a file (Excel or CSV)", type=["xlsx", "csv"])
 if uploaded_file is not None:
-    data = pd.read_csv(uploaded_file) if uploaded_file.name.endswith('.csv') else pd.read_excel(uploaded_file)
-    data['Date'] = pd.to_datetime(data['Date'])
-    data['Customer Name (Cleaned)'] = data['Customer Name'].apply(transform_customer_name)
+    df = pd.read_csv(uploaded_file) if uploaded_file.name.endswith('.csv') else pd.read_excel(uploaded_file)
+    df['Customer Name (Cleaned)'] = df['Customer Name'].apply(transform_customer_name)
+
+    # Specific customer names to include
+    customer_names_to_include = ['Alpla India Private Limited_Sangareddy', 'Babri Polypet Private Limited_Haridwar', 'Bericap India Private Limited_Pune',
+                             'Chemco Plastic Industries Private Limited_Vadodara','Epitome Petropack Limited_Kolkata','Hindustan Coca Cola Beverages Private Limited_Goblej Plant_HMA1',
+                             'Hindustan Coca Cola Beverages Private Limited_Bidadi Greenfield_HMKJ','Hindustan Coca Cola Beverages Private Limited_Bidadi Old Plant_HMK1','Hindustan Coca Cola Beverages Private Limited_Ahmedabad Sanand_HMAH',
+                             'Hindustan Coca Cola Beverages Private Limited_Khurda_HMF1','Hindustan Coca Cola Beverages Private Limited_Kanchenkanya_HMS3','Hindustan Coca Cola Beverages Private Limited_GAPL_Howrah','Manjushree Technopack Limited_Bangalore_Bidadi',
+                             'Oricon Enterprises Limited_Khordha','Pepsico India Holdings Private Limited_Patiala_Channo','SLMG Beverages Private Limited_Lucknow']
+
+    # Filter the data
+    filtered_data = df[(df['Customer Name (Cleaned)'].isin(customer_names_to_include)) & (df['Model 2'] == 'Allot')]
 
     # Dropdown for standard date selection
     selected_date = st.sidebar.selectbox("Select From Date", standard_dates)
 
     # Dropdown for customer selection
-    customer_name = st.sidebar.selectbox("Select Customer", data['Customer Name (Cleaned)'].unique())
+    customer_name = st.sidebar.selectbox("Select Customer", filtered_data['Customer Name (Cleaned)'].unique())
 
     # Dropdown for aggregation frequency
     frequency = st.sidebar.selectbox("Select Aggregation Frequency", ['15D', 'W', 'M'])
@@ -69,9 +79,8 @@ if uploaded_file is not None:
     imputation_methods = ['None', 'ffill', 'bfill', 'linear', 'akima', 'cubic']
     imputation_method = st.sidebar.selectbox("Select Imputation Method", imputation_methods)
 
-    # Filter data based on the selected date and customer
-    filtered_data = data[(data['Date'] >= pd.to_datetime(selected_date)) &
-                         (data['Customer Name (Cleaned)'] == customer_name)]
+    # Convert Date column to datetime
+    filtered_data['Date'] = pd.to_datetime(filtered_data['Date'])
 
     # Resample and aggregate QTY data
     resampled_data = filtered_data.resample(frequency, on='Date')['QTY'].sum().reset_index()
