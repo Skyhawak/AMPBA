@@ -35,7 +35,7 @@ def local_css(file_path):
     )
 
 # Apply the custom CSS
-local_css("High_resolution_image_of_wooden_pallets_neatly_sta.png")  # Replace with the actual path to your image
+local_css("High_resolution_image_of_wooden_pallets_neatly_sta.png")  # Make sure to replace with the correct path
 
 st.markdown("""
     <h1 style='text-align: center; color: black;'>Demand Forecasting & Optimization of Supply Chain</h1>
@@ -49,8 +49,6 @@ uploaded_file = st.sidebar.file_uploader("Choose a file (Excel or CSV)", type=["
 if uploaded_file is not None:
     df = pd.read_csv(uploaded_file) if uploaded_file.name.endswith('.csv') else pd.read_excel(uploaded_file)
     df['Customer Name (Cleaned)'] = df['Customer Name'].apply(transform_customer_name)
-
-    # Convert Date column to datetime
     df['Date'] = pd.to_datetime(df['Date'])
 
     # Specific customer names to include
@@ -68,8 +66,6 @@ if uploaded_file is not None:
 
     # Standard dates for selection
     standard_dates = ['2019-01-01', '2021-01-01', '2021-11-01']
-    
-    # Dropdown for standard date selection
     selected_date = st.sidebar.selectbox("Select From Date", standard_dates)
 
     # Further filter the DataFrame from the selected date onwards
