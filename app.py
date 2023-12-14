@@ -13,10 +13,31 @@ def transform_customer_name(customer_name):
     customer_name = customer_name.replace(" _ ", "_").replace("_ ", "_").replace(" _", "_")
     return customer_name
 
-# Set page layout and title
-st.set_page_config(layout="wide")
-st.title('Demand Forecasting & Optimization of Supply Chain')
-st.subheader('Wooden Pallets')
+# Function to apply custom CSS for background image
+def local_css(file_path):
+    with open(file_path, "rb") as file:
+        bg_image = base64.b64encode(file.read()).decode("utf-8")
+    st.markdown(
+        f"""
+        <style>
+        .stApp {{
+            background-image: url("data:image/png;base64,{bg_image}");
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }}
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+
+# Apply the custom CSS
+local_css("path_to_your_image.png")  # Make sure to replace with the actual path to your image
+
+st.markdown("""
+    <h1 style='text-align: center; color: black;'>Demand Forecasting & Optimization of Supply Chain</h1>
+    <h2 style='text-align: center; color: black;'>Wooden Pallets</h2>
+    """, unsafe_allow_html=True)
 
 st.sidebar.header("Input Options")
 
