@@ -44,23 +44,14 @@ st.markdown("""
 
 st.sidebar.header("Input Options")
 
-# Standard dates for selection
-standard_dates = ['2019-01-01', '2021-01-01', '2021-11-01']
-
 # File upload and data preparation
 uploaded_file = st.sidebar.file_uploader("Choose a file (Excel or CSV)", type=["xlsx", "csv"])
 if uploaded_file is not None:
     df = pd.read_csv(uploaded_file) if uploaded_file.name.endswith('.csv') else pd.read_excel(uploaded_file)
     df['Customer Name (Cleaned)'] = df['Customer Name'].apply(transform_customer_name)
 
-# Convert Date column to datetime
+    # Convert Date column to datetime
     df['Date'] = pd.to_datetime(df['Date'])
-
-    # Dropdown for standard date selection
-    selected_date = st.sidebar.selectbox("Select From Date", standard_dates)
-
-    # Filter the DataFrame from the selected date onwards
-    filtered_data = df[df['Date'] >= pd.to_datetime(selected_date)]
 
     # Specific customer names to include
     customer_names_to_include = ['Alpla India Private Limited_Sangareddy', 'Babri Polypet Private Limited_Haridwar', 'Bericap India Private Limited_Pune',
@@ -69,11 +60,20 @@ if uploaded_file is not None:
                              'Hindustan Coca Cola Beverages Private Limited_Khurda_HMF1','Hindustan Coca Cola Beverages Private Limited_Kanchenkanya_HMS3','Hindustan Coca Cola Beverages Private Limited_GAPL_Howrah','Manjushree Technopack Limited_Bangalore_Bidadi',
                              'Oricon Enterprises Limited_Khordha','Pepsico India Holdings Private Limited_Patiala_Channo','SLMG Beverages Private Limited_Lucknow']
 
-    # Filter the data
-    filtered_data = df[(df['Customer Name (Cleaned)'].isin(customer_names_to_include)) & (df['Model 2'] == 'Allot')]
+    # Filter the data for specific customers and 'Model 2' == 'Allot'
+    df_filtered = df[(df['Customer Name (Cleaned)'].isin(customer_names_to_include)) & (df['Model 2'] == 'Allot')]
 
     # Dropdown for customer selection
-    customer_name = st.sidebar.selectbox("Select Customer", filtered_data['Customer Name (Cleaned)'].unique())
+    customer_name = st.sidebar.selectbox("Select Customer", df_filtered['Customer Name (Cleaned)'].unique())
+
+    # Standard dates for selection
+    standard_dates = ['2019-01-01', '2021-01-01', '2021-11-01']
+    
+    # Dropdown for standard date selection
+    selected_date = st.sidebar.selectbox("Select From Date", standard_dates)
+
+    # Further filter the DataFrame from the selected date onwards
+    final_filtered_data = df_filtered[df_filtered['Date'] >= pd.to_datetime(selected_date)]
 
     # Dropdown for aggregation frequency
     frequency = st.sidebar.selectbox("Select Aggregation Frequency", ['15D', 'W', 'M'])
@@ -85,11 +85,8 @@ if uploaded_file is not None:
     imputation_methods = ['None', 'ffill', 'bfill', 'linear', 'akima', 'cubic']
     imputation_method = st.sidebar.selectbox("Select Imputation Method", imputation_methods)
 
-    # Convert Date column to datetime
-    filtered_data['Date'] = pd.to_datetime(filtered_data['Date'])
-
     # Resample and aggregate QTY data
-    resampled_data = filtered_data.resample(frequency, on='Date')['QTY'].sum().reset_index()
+    resampled_data = final_filtered_data.resample(frequency, on='Date')['QTY'].sum().reset_index()
 
     # Save the original data before imputation
     original_data = resampled_data.copy()
