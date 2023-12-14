@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
-import base64
 import numpy as np
 from autots import AutoTS
 
@@ -14,31 +13,10 @@ def transform_customer_name(customer_name):
     customer_name = customer_name.replace(" _ ", "_").replace("_ ", "_").replace(" _", "_")
     return customer_name
 
-# Function to apply custom CSS for background image
-def local_css(file_path):
-    with open(file_path, "rb") as file:
-        bg_image = base64.b64encode(file.read()).decode("utf-8")
-    st.markdown(
-        f"""
-        <style>
-        .stApp {{
-            background-image: url("data:image/png;base64,{bg_image}");
-            background-size: cover;
-            background-repeat: no-repeat;
-            background-attachment: fixed;
-        }}
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
-
-# Apply the custom CSS
-local_css("High_resolution_image_of_wooden_pallets_neatly_sta.png")  # Make sure to replace with the actual path to your image
-
-st.markdown("""
-    <h1 style='text-align: center; color: black;'>Demand Forecasting & Optimization of Supply Chain</h1>
-    <h2 style='text-align: center; color: black;'>Wooden Pallets</h2>
-    """, unsafe_allow_html=True)
+# Set page layout and title
+st.set_page_config(layout="wide")
+st.title('Demand Forecasting & Optimization of Supply Chain')
+st.subheader('Wooden Pallets')
 
 st.sidebar.header("Input Options")
 
@@ -59,7 +37,7 @@ if uploaded_file is not None:
     customer_name = st.sidebar.selectbox("Select Customer", data['Customer Name (Cleaned)'].unique())
 
     # Dropdown for aggregation frequency
-    frequency = st.sidebar.selectbox("Select Aggregation Frequency", ['D', 'W', 'M'])
+    frequency = st.sidebar.selectbox("Select Aggregation Frequency", ['15D', 'W', 'M'])
 
     # Slider for confidence interval
     confidence_interval = st.sidebar.slider("Select Confidence Interval", 0.80, 0.99, 0.95, 0.01)
@@ -128,13 +106,13 @@ if uploaded_file is not None:
             st.dataframe(forecast_combined.reset_index(drop=True))
 
             # Plotting the forecast
-            plt.figure(figsize=(12, 6))
-            plt.plot(resampled_data['Date'], resampled_data['QTY'], label='Historical Data', color='blue')
-            plt.plot(forecast_combined['Forecast Interval'], forecast_combined['Forecast Value'], label='Forecasted Data', color='green', linestyle='--')
-            plt.fill_between(forecast_combined['Forecast Interval'], forecast_combined['Lower Confidence Interval'], forecast_combined['Upper Confidence Interval'], color='gray', alpha=0.3, label='Confidence Interval')
-            plt.title('Historical vs Forecasted Data with Confidence Intervals')
-            plt.xlabel('Date')
-            plt.ylabel('QTY')
-            plt.legend()
+            forecast_fig, forecast_ax = plt.subplots(figsize=(12, 6))
+            forecast_ax.plot(resampled_data['Date'], resampled_data['QTY'], label='Historical Data', color='blue')
+            forecast_ax.plot(forecast_combined['Forecast Interval'], forecast_combined['Forecast Value'], label='Forecasted Data', color='green', linestyle='--')
+            forecast_ax.fill_between(forecast_combined['Forecast Interval'], forecast_combined['Lower Confidence Interval'], forecast_combined['Upper Confidence Interval'], color='gray', alpha=0.3, label='Confidence Interval')
+            forecast_ax.set_title('Historical vs Forecasted Data with Confidence Intervals')
+            forecast_ax.set_xlabel('Date')
+            forecast_ax.set_ylabel('QTY')
+            forecast_ax.legend()
             plt.tight_layout()
-            st.pyplot(plt)
+            st.pyplot(forecast_fig)
