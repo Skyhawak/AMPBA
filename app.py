@@ -52,7 +52,11 @@ if uploaded_file is not None:
     df['Date'] = pd.to_datetime(df['Date'])
 
     # Specific customer names to include
-    customer_names_to_include = ['Alpla India Private Limited_Sangareddy', 'Babri Polypet Private Limited_Haridwar', ...]  # Your list of customer names
+    customer_names_to_include = ['Alpla India Private Limited_Sangareddy', 'Babri Polypet Private Limited_Haridwar', 'Bericap India Private Limited_Pune',
+                             'Chemco Plastic Industries Private Limited_Vadodara','Epitome Petropack Limited_Kolkata','Hindustan Coca Cola Beverages Private Limited_Goblej Plant_HMA1',
+                             'Hindustan Coca Cola Beverages Private Limited_Bidadi Greenfield_HMKJ','Hindustan Coca Cola Beverages Private Limited_Bidadi Old Plant_HMK1','Hindustan Coca Cola Beverages Private Limited_Ahmedabad Sanand_HMAH',
+                             'Hindustan Coca Cola Beverages Private Limited_Khurda_HMF1','Hindustan Coca Cola Beverages Private Limited_Kanchenkanya_HMS3','Hindustan Coca Cola Beverages Private Limited_GAPL_Howrah','Manjushree Technopack Limited_Bangalore_Bidadi',
+                             'Oricon Enterprises Limited_Khordha','Pepsico India Holdings Private Limited_Patiala_Channo','SLMG Beverages Private Limited_Lucknow']  # Your list of customer names
 
     # Filter the data for specific customers and 'Model 2' == 'Allot'
     df_filtered = df[(df['Customer Name (Cleaned)'].isin(customer_names_to_include)) & (df['Model 2'] == 'Allot')]
