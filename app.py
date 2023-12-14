@@ -7,7 +7,12 @@ from autots import AutoTS
 
 # Function to transform customer names
 def transform_customer_name(customer_name):
-    # ... (your existing transformation code)
+    customer_name = customer_name.strip()
+    customer_name = ' '.join(customer_name.split())
+    customer_name = customer_name.replace("-", "_")
+    customer_name = customer_name.replace("Pvt. Ltd.", "Private Limited")
+    customer_name = customer_name.replace(" _ ", "_").replace("_ ", "_").replace(" _", "_")
+    return customer_name
 
 # Function to apply custom CSS for background image
 def local_css(file_path):
@@ -28,7 +33,7 @@ def local_css(file_path):
     )
 
 # Apply the custom CSS
-local_css("path_to_your_image.png")  # Replace with your actual image path
+local_css("High_resolution_image_of_wooden_pallets_neatly_sta.png")
 
 st.markdown("""
     <h1 style='text-align: center; color: black;'>Demand Forecasting & Optimization of Supply Chain</h1>
@@ -63,14 +68,12 @@ if uploaded_file is not None:
     imputation_methods = ['None', 'ffill', 'bfill', 'linear', 'akima', 'cubic']
     imputation_method = st.sidebar.selectbox("Select Imputation Method", imputation_methods)
 
-    # Filter data based on the selected date
-    filtered_data = data[data['Date'] >= pd.to_datetime(selected_date)]
-
-    # Filter data based on the selected customer
-    customer_filtered_data = filtered_data[filtered_data['Customer Name (Cleaned)'] == customer_name]
+    # Filter data based on the selected date and customer
+    filtered_data = data[(data['Date'] >= pd.to_datetime(selected_date)) &
+                         (data['Customer Name (Cleaned)'] == customer_name)]
 
     # Resample and aggregate QTY data
-    resampled_data = customer_filtered_data.resample(frequency, on='Date')['QTY'].sum().reset_index()
+    resampled_data = filtered_data.resample(frequency, on='Date')['QTY'].sum().reset_index()
 
     # Save the original data before imputation
     original_data = resampled_data.copy()
