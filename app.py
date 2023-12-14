@@ -33,7 +33,7 @@ def local_css(file_path):
     )
 
 # Apply the custom CSS
-local_css("High_resolution_image_of_wooden_pallets_neatly_sta.png")
+local_css("path_to_your_image.png")  # Make sure to replace with the actual path to your image
 
 st.markdown("""
     <h1 style='text-align: center; color: black;'>Demand Forecasting & Optimization of Supply Chain</h1>
@@ -86,7 +86,8 @@ if uploaded_file is not None:
     # Plot the data before and after imputation
     fig, ax = plt.subplots(figsize=(12, 6))
     ax.plot(original_data['Date'], original_data['QTY'], label='Original Data', color='blue')
-    ax.plot(resampled_data['Date'], resampled_data['QTY'], label='Imputed Data', color='red', linestyle='--')
+    if imputation_method != 'None':
+        ax.plot(resampled_data['Date'], resampled_data['QTY'], label='Imputed Data', color='red', linestyle='--')
     ax.set_title('Data Over Time Before and After Imputation')
     ax.set_xlabel('Date')
     ax.set_ylabel('QTY')
@@ -109,7 +110,6 @@ if uploaded_file is not None:
 
             st.write("Chosen Model by AutoTS:")
             try:
-                # Retrieve and display the best model's summary
                 best_model_summary = model.best_model['Model Summary']
                 st.text(best_model_summary)
             except KeyError as e:
@@ -129,7 +129,7 @@ if uploaded_file is not None:
 
             # Plotting the forecast
             plt.figure(figsize=(12, 6))
-            plt.plot(original_data['Date'], original_data['QTY'], label='Historical Data', color='blue')
+            plt.plot(resampled_data['Date'], resampled_data['QTY'], label='Historical Data', color='blue')
             plt.plot(forecast_combined['Forecast Interval'], forecast_combined['Forecast Value'], label='Forecasted Data', color='green', linestyle='--')
             plt.fill_between(forecast_combined['Forecast Interval'], forecast_combined['Lower Confidence Interval'], forecast_combined['Upper Confidence Interval'], color='gray', alpha=0.3, label='Confidence Interval')
             plt.title('Historical vs Forecasted Data with Confidence Intervals')
