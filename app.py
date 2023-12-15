@@ -107,10 +107,11 @@ if uploaded_file is not None:
             ax.legend()
             st.pyplot(fig)
 
-           # Forecasting
+          # Forecasting
             if st.sidebar.button("Forecast"):
                 with st.spinner('Running the model...'):
-                    model = AutoTS(forecast_length=20,  # Forecasting 20 future values
+                    model = AutoTS(
+                        forecast_length=20,  # Forecasting 20 future values
                         frequency=frequency,
                         prediction_interval=confidence_interval,
                         ensemble='simple',
@@ -123,21 +124,18 @@ if uploaded_file is not None:
 
                     st.write("Chosen Model by AutoTS:")
                     try:
-                        best_model_info = model.best_model
-                        model_name = best_model_info.get('Model', 'No model name found')
-                        model_params = best_model_info.get('ModelParameters', {})
-
-                        st.write(f"Best Model: {model_name}")
-                        st.write("Model Parameters:")
-
-                        # Convert model parameters to JSON and display
-                        if isinstance(model_params, dict):
-                            st.json(model_params)
+                        if 'Model Summary' in model.best_model:
+                            best_model_summary = model.best_model['Model Summary']
+                            st.write("Best Model:", best_model_summary['Model'])
+                            st.write("Model Parameters:")
+                            # Use st.json to display model parameters in a structured JSON format
+                            st.json(best_model_summary['ModelParameters'])
                         else:
-                            st.text(model_params)
-                    except Exception as e:
-                        st.error(f"Error retrieving model information: {e}")
-            
+                            st.warning("No 'Model Summary' found for the best model.")
+                    except KeyError as e:
+                        st.error(f"KeyError: {e}")
+                        st.text("There was an error retrieving the model summary.")
+ 
                     prediction = model.predict()
                     forecast_df = prediction.forecast.round(0)
                     forecast_combined = forecast_df.copy()
