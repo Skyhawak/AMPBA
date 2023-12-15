@@ -119,12 +119,15 @@ if uploaded_file is not None:
                     )
                     model = model.fit(resampled_data, date_col='Date', value_col='QTY', id_col=None)
 
+                    # Displaying the chosen model and its parameters
                     st.write("Chosen Model by AutoTS:")
                     try:
-                        best_model_summary = model.best_model['Model Summary'] if 'Model Summary' in model.best_model else "No 'Model Summary' found"
-                        st.text(best_model_summary)
-                    except KeyError as e:
-                        st.error(f"KeyError: {e}")
+                        best_model_info = model.best_model
+                        st.write(f"Best Model: {best_model_info['Model']}")  # Model name
+                        st.write("Model Parameters:")
+                        st.json(best_model_info['ModelParameters'])  # Model parameters
+                    except Exception as e:
+                        st.error(f"Error retrieving model information: {e}")
 
                     prediction = model.predict()
                     forecast_df = prediction.forecast.round(0)
