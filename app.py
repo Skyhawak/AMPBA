@@ -107,7 +107,6 @@ if uploaded_file is not None:
             ax.legend()
             st.pyplot(fig)
 
-          # Forecasting
             if st.sidebar.button("Forecast"):
                 with st.spinner('Running the model...'):
                     model = AutoTS(
@@ -124,20 +123,24 @@ if uploaded_file is not None:
 
                     st.write("Chosen Model by AutoTS:")
                     try:
-                        if 'Model Summary' in model.best_model:
-                            best_model_summary = model.best_model['Model Summary']
-                            st.write("Best Model:", best_model_summary['Model'])
+                        best_model_dict = model.best_model.to_dict()  # Convert the best model to a dictionary if it's not already
+                        best_model_summary = best_model_dict.get('Model Summary', {})
+                        if best_model_summary:
+                            st.write("Best Model:", best_model_summary.get('Model', 'No model name found'))
                             st.write("Model Parameters:")
-                            # Use st.json to display model parameters in a structured JSON format
-                            st.json(best_model_summary['ModelParameters'])
+                            model_params = best_model_summary.get('ModelParameters', {})
+                            if model_params:
+                                st.json(model_params)  # Display parameters in JSON format
+                            else:
+                                st.write("No model parameters found")
                         else:
                             st.warning("No 'Model Summary' found for the best model.")
-                    except KeyError as e:
-                        st.error(f"KeyError: {e}")
-                        st.text("There was an error retrieving the model summary.")
+                    except Exception as e:
+                        st.error(f"Error: {e}")
  
                     prediction = model.predict()
                     forecast_df = prediction.forecast.round(0)
+                    forecast_df['QTY'] = forecast_df['QTY'].round().astype(int)
                     forecast_combined = forecast_df.copy()
                     forecast_combined['Forecast Interval'] = forecast_combined.index
                     forecast_combined['Lower Confidence Interval'] = prediction.lower_forecast['QTY']
