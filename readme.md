@@ -1,5 +1,1 @@
-Hello world 
-welcome to world
-testing_1
-
-testing_23
+The manufacturer faces challenges in warehouse capacity and production planning due to unpredictable customer demand fluctuations. The project's goal is to develop a sales prediction solution, utilizing historical sales data and external factors, to guide inventory management, production planning, and resource allocation. The model will forecast demand both customer-wise and warehouse-wise, at weekly and daily intervals. It will also provide actionable insights through analytical reports and Business Intelligence Dashboards. The focus includes designing an end-to-end pipeline for deployment and strategies for post-deployment maintenance and optimization.
